@@ -471,6 +471,8 @@ class Canvas(_CanvasBase):
     _view_name = Unicode("CanvasView").tag(sync=True)
 
     _send_client_ready_event = Bool(True).tag(sync=True)
+    _send_image_updated_event = Bool(True).tag(sync=True)
+    _use_requestAnimationFrame = Bool(False).tag(sync=True)
 
     #: (valid HTML color or Gradient or Pattern) The color for filling rectangles and paths. Default to ``'black'``.
     fill_style = Union(
@@ -581,6 +583,7 @@ class Canvas(_CanvasBase):
     line_dash_offset = Float(0.0)
 
     _client_ready_callbacks = Instance(CallbackDispatcher, ())
+    _image_updated_callbacks = Instance(CallbackDispatcher, ())
 
     _mouse_move_callbacks = Instance(CallbackDispatcher, ())
     _mouse_down_callbacks = Instance(CallbackDispatcher, ())
@@ -1491,6 +1494,10 @@ class Canvas(_CanvasBase):
         """
         self._client_ready_callbacks.register_callback(callback, remove=remove)
 
+    def on_image_updated(self, callback, remove=False):
+        """Register a callback that will be called when the image is updated."""
+        self._image_updated_callbacks.register_callback(callback, remove=remove)
+
     def on_mouse_move(self, callback, remove=False):
         """Register a callback that will be called on mouse move."""
         self._mouse_move_callbacks.register_callback(callback, remove=remove)
@@ -1542,6 +1549,8 @@ class Canvas(_CanvasBase):
     def _handle_frontend_event(self, _, content, buffers):
         if content.get("event", "") == "client_ready":
             self._client_ready_callbacks()
+        if content.get("event", "") == "image_updated":
+            self._image_updated_callbacks()
 
         if content.get("event", "") == "mouse_move":
             self._mouse_move_callbacks(content["x"], content["y"])
@@ -1733,6 +1742,10 @@ class MultiCanvas(_CanvasBase):
         """
         self._canvases[-1].on_client_ready(callback, remove=remove)
 
+    def on_image_updated(self, callback, remove=False):
+        """Register a callback that will be called when the image is updated."""
+        self._canvases[-1].on_image_updated(callback, remove=remove)
+        
     def on_mouse_move(self, callback, remove=False):
         """Register a callback that will be called on mouse move."""
         self._canvases[-1].on_mouse_move(callback, remove=remove)

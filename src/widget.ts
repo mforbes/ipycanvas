@@ -552,7 +552,9 @@ export class CanvasModel extends DOMWidgetModel {
       height: 500,
       sync_image_data: false,
       image_data: null,
-      _send_client_ready_event: true
+      _send_client_ready_event: true,
+      _send_image_updated_event: true,
+      _use_requestAnimationFrame: false
     };
   }
 
@@ -600,7 +602,7 @@ export class CanvasModel extends DOMWidgetModel {
     // this.on('msg:custom', this.onCommand.bind(this));
 
     if (this.get('_send_client_ready_event')) {
-      this.send({ event: 'client_ready' }, {});
+      this.send({ event: 'client_ready' }, {'request': 'client_ready'});
     }
   }
 
@@ -1065,6 +1067,15 @@ export class CanvasModel extends DOMWidgetModel {
     } else {
       this.ctx.drawImage(image, x, y, width, height);
     }
+    if (this.get('_send_image_updated_event')) {
+      if (this.get('_use_requestAnimationFrame')) {
+        requestAnimationFrame(
+          () => this.send({ event: 'image_updated' }, {'request': 'image_updated'})
+        );
+      } else {
+        this.send({ event: 'image_updated' }, {'request': 'image_updated'});
+      }
+    }    
   }
 
   async putImageData(args: any[], buffers: any) {
